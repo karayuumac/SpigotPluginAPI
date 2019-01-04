@@ -1,0 +1,9 @@
+name: AutoFarmingPlugin
+main: AutoFarming
+version: @version@
+api-version: 1.13
+
+commands:
+  workbench:
+    description: "ワークベンチを開くコマンドです."
+    aliases: [craft]
