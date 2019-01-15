@@ -1,4 +1,6 @@
 import command.CommandHandler
+import config.ConfigHandler
+import data.migration.TableMigrator
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -19,6 +21,11 @@ class AutoFarming : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(PlayerInteractListener, this)
 
         CommandHandler.register()
+
+        ConfigHandler.register()
+
+        //テーブル作成を請け負う.
+        TableMigrator.migrate()
     }
 
     companion object {
