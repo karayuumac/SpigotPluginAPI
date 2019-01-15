@@ -2,6 +2,7 @@ package data.migration.component
 
 import config.configs.DatabaseConfig
 import data.SQLHandler
+import extension.info
 
 /**
  * Tableを表すクラスです.
@@ -15,7 +16,7 @@ import data.SQLHandler
  * @author karayuu
  */
 class Table(val table_name: String) {
-    val builder = SQLCommandBuilder()
+    private val builder = SQLCommandBuilder()
 
     init {
         val command = "create table if not exists ${DatabaseConfig.database}.$table_name (" +

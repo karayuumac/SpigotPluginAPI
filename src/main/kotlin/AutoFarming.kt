@@ -30,6 +30,10 @@ class AutoFarming : JavaPlugin() {
 
     companion object {
         lateinit var plugin: AutoFarming
+
+        fun runTaskAsynchronously(runnable: Runnable) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable)
+        }
     }
 }
 

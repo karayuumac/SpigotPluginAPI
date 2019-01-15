@@ -2,6 +2,7 @@ package data
 
 import config.configs.DatabaseConfig
 import extension.warn
+import org.bukkit.Bukkit
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -23,6 +24,7 @@ object SQLHandler {
     private val password = DatabaseConfig.password
 
     init {
+        //Taskを生成していないが,処理上最優先＆負荷も軽いため,メインスレッドで行う.
         try {
             connection = createConnection()
             statement = connection.createStatement()
@@ -37,33 +39,37 @@ object SQLHandler {
      * SQLの接続を確認します.
      */
     fun checkConnection() {
-        try {
-            if (connection.isClosed) {
-                plugin.warn("[SQLError] Connection is closed. Reconnecting...")
-                connection = createConnection()
+        AutoFarming.runTaskAsynchronously(Runnable {
+            try {
+                if (connection.isClosed) {
+                    plugin.warn("[SQLError] Connection is closed. Reconnecting...")
+                    connection = createConnection()
+                }
+                if (statement.isClosed) {
+                    plugin.warn("[SQLError] Statement is closed. Reconnecting...")
+                    statement = connection.createStatement()
+                }
+            } catch (e: SQLException) {
+                e.printStackTrace()
+                plugin.warn("[SQLError] Can't connect to the SQL." +
+                        "Check your DatabaseConfig to confirm the requirements.")
             }
-            if (statement.isClosed) {
-                plugin.warn("[SQLError] Statement is closed. Reconnecting...")
-                statement = connection.createStatement()
-            }
-        } catch (e: SQLException) {
-            e.printStackTrace()
-            plugin.warn("[SQLError] Can't connect to the SQL." +
-                    "Check your DatabaseConfig to confirm the requirements.")
-        }
+        })
     }
 
     /**
      * [command] で入力されたSQLコマンドを実行します.
      */
     fun execute(command: String) {
-        checkConnection()
-        try {
-            statement.executeUpdate(command)
-        } catch (e: SQLException) {
-            plugin.warn("[SQLError] Can't execute sql query.")
-            e.printStackTrace()
-        }
+        AutoFarming.runTaskAsynchronously(Runnable {
+            checkConnection()
+            try {
+                statement.executeUpdate(command)
+            } catch (e: SQLException) {
+                plugin.warn("[SQLError] Can't execute sql query.")
+                e.printStackTrace()
+            }
+        })
     }
 
     private fun createConnection(): Connection {

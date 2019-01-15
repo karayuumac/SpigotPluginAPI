@@ -10,5 +10,9 @@ import org.bukkit.ChatColor
  */
 
 fun AutoFarming.warn(message: String) {
-    this.logger.warning("${ChatColor.RED}$message")
+    this.server.consoleSender.sendMessage("${ChatColor.RED}$message")
+}
+
+fun AutoFarming.info(message: String) {
+    this.server.consoleSender.sendMessage("${ChatColor.YELLOW}$message")
 }
