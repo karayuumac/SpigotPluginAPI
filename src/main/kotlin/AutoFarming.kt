@@ -1,6 +1,7 @@
 import command.CommandHandler
 import config.ConfigHandler
 import data.migration.TableMigratory
+import data.SQLHandler
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -28,6 +29,10 @@ class AutoFarming : JavaPlugin() {
         TableMigratory.migrate()
     }
 
+    override fun onDisable() {
+        SQLHandler.disconnect()
+    }
+
     companion object {
         lateinit var plugin: AutoFarming
 
@@ -40,7 +45,6 @@ class AutoFarming : JavaPlugin() {
 object PlayerInteractListener : Listener {
     @EventHandler
     fun onPlayerRightclickCrop(e: PlayerInteractEvent) {
-        val player = e.player ?: return
         val block = e.clickedBlock ?: return
         val world = block.world
 
