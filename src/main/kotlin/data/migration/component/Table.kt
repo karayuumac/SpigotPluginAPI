@@ -2,7 +2,8 @@ package data.migration.component
 
 import config.configs.DatabaseConfig
 import data.SQLHandler
-import extension.info
+import data.SqlSelecter
+import java.util.*
 
 /**
  * Tableを表すクラスです.
@@ -18,8 +19,10 @@ import extension.info
 class Table(val table_name: String) {
     private val builder = SQLCommandBuilder()
 
+    private val db = DatabaseConfig.database
+
     init {
-        val command = "create table if not exists ${DatabaseConfig.database}.$table_name (" +
+        val command = "create table if not exists $db.$table_name (" +
                 "table_name varchar(30) unique," +
                 "uuid varchar(128) primary key)"
         SQLHandler.execute(command)
@@ -61,6 +64,13 @@ class Table(val table_name: String) {
     fun make() {
         val command = builder.build(table_name)
         SQLHandler.execute(command)
+    }
+
+    /**
+     * SQLから値をロードします.
+     */
+    fun <E> load(clazz: Class<E>, uuid: UUID): E {
+        return SqlSelecter.selectOne("select * from $db.$table_name where uuid like '?'", clazz, uuid.toString())
     }
 }
 
