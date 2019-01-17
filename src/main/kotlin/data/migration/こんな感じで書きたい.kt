@@ -1,6 +1,7 @@
 package data.migration
 
 import data.migration.component.Migration
+import java.util.*
 
 /**
  * @author karayuu
@@ -16,13 +17,29 @@ object TableMigratory {
         Create_user_table::class.java
     )
 
+    private val tables_instances = mutableListOf<Migration>()
+
     /**
      * [tables]で指定した全てのテーブルの作成を行います.
      */
     fun migrate() {
         tables.forEach {
             //インスタンス作成,migrate呼び出しにより,migrationが実行される.
-            it.newInstance().migrate()
+            val migration = it.newInstance()
+            tables_instances.add(migration)
+            migration.migrate()
         }
+    }
+
+    /**
+     * [tables]で指定したすべてのテーブルから[uuid]のデータを取得します.
+     */
+    fun load(uuid: UUID): List<Migration> {
+        val list = mutableListOf<Migration>()
+        tables_instances.forEach {
+            val data = it.load(it.javaClass, uuid)
+            list.add(data)
+        }
+        return list.toList()
     }
 }

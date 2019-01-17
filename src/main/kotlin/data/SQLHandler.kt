@@ -3,10 +3,7 @@ package data
 import config.configs.DatabaseConfig
 import extension.warn
 import org.bukkit.Bukkit
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.SQLException
-import java.sql.Statement
+import java.sql.*
 
 /**
  * SQLの初期準備等を行うオブジェクトです.
@@ -16,7 +13,7 @@ import java.sql.Statement
 object SQLHandler {
     private val plugin = AutoFarming.plugin
 
-    private lateinit var connection: Connection
+    lateinit var connection: Connection
     private lateinit var statement: Statement
 
     private val url = DatabaseConfig.url
@@ -24,7 +21,7 @@ object SQLHandler {
     private val password = DatabaseConfig.password
 
     init {
-        //Taskを生成していないが,処理上最優先＆負荷も軽いため,メインスレッドで行う.
+        //Taskを生成していないが,処理上最優先(connection, statement生成)＆負荷も軽いため,メインスレッドで行う.
         try {
             connection = createConnection()
             statement = connection.createStatement()
@@ -72,7 +69,70 @@ object SQLHandler {
         })
     }
 
+    /**
+     * [connection],[statement] を切断します.
+     * Disabled時に呼び出されることを想定しています.
+     * 保存処理後,1度呼び出すことを推奨します.
+     */
+    fun disconnect() {
+        if (!connection.isClosed || !statement.isClosed) {
+            connection.close()
+            statement.close()
+        }
+    }
+
     private fun createConnection(): Connection {
         return DriverManager.getConnection(url, user, password)
+    }
+}
+
+/**
+ * SQLにおいて,特にカラムの操作を行う便利な関数をまとめたオブジェクトです.
+ * https://qiita.com/momosetkn/items/c5d420d780ae7b4d401f
+ * を利用させていただきました.
+ *
+ * @author karayuu
+ */
+object SqlSelecter {
+    /**
+     * selectを実行する関数です.
+     * [sql] でsql文を(?はプレースホルダー),[clazz] で格納するclassを指定します.
+     */
+    fun <E> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
+        var obj: E = clazz.newInstance()
+
+        AutoFarming.runTaskAsynchronously(Runnable {
+            val statement: Statement = SQLHandler.connection.createStatement()
+            val rs: ResultSet
+
+        /*try { } catch (e: SQLException) {
+            plugin.warn("[SQLError] Can't create statement.")
+            e.printStackTrace()
+        }*/
+            for (param in params) {
+                sql.replaceFirst("?", param)
+            }
+            rs = statement.executeQuery(sql)
+            obj = toObject(rs, clazz)
+
+            rs.close()
+            statement.close()
+        })
+        return obj
+    }
+
+    /**
+     * [rs] から [clazz] のオブジェクトを生成します.
+     */
+    private fun <E> toObject(rs: ResultSet, clazz: Class<E>): E {
+        val bean = clazz.newInstance()
+        if (rs.next()) {
+            val fields = clazz.fields
+            for (field in fields) {
+                val obj = rs.getObject(field.name)
+                field.set(bean, obj)
+            }
+        }
+        return bean
     }
 }
