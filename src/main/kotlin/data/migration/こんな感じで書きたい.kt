@@ -10,7 +10,7 @@ class Create_user_table : Migration("user_table_mining") {
     var mining_all = table.int("mining_all")
 }
 
-object TableMigrator {
+object TableMigratory {
     /** Migrationを行うクラスを指定します. */
     private val tables = listOf(
         Create_user_table::class.java

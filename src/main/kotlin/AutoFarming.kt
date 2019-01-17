@@ -1,6 +1,6 @@
 import command.CommandHandler
 import config.ConfigHandler
-import data.migration.TableMigrator
+import data.migration.TableMigratory
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -25,7 +25,7 @@ class AutoFarming : JavaPlugin() {
         ConfigHandler.register()
 
         //テーブル作成を請け負う.
-        TableMigrator.migrate()
+        TableMigratory.migrate()
     }
 
     companion object {
