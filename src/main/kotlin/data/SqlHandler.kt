@@ -70,6 +70,23 @@ object SQLHandler {
     }
 
     /**
+     * [command] で入力されたSQLコマンドを実行し,[ResultSet]を返します(nullable).
+     */
+    fun getResult(command: String): ResultSet? {
+        var rs: ResultSet? = null
+        AutoFarming.runTaskAsynchronously(Runnable {
+            checkConnection()
+            try {
+                rs = statement.executeQuery(command)
+            } catch (e: SQLException) {
+                plugin.warn("[SQLError] Can't execute sql query.")
+                e.printStackTrace()
+            }
+        })
+        return rs
+    }
+
+    /**
      * [connection],[statement] を切断します.
      * Disabled時に呼び出されることを想定しています.
      * 保存処理後,1度呼び出すことを推奨します.
@@ -126,7 +143,7 @@ object SqlSelecter {
      */
     private fun <E> toObject(rs: ResultSet, clazz: Class<E>): E {
         val bean = clazz.newInstance()
-        if (rs.next()) {
+        while (rs.next()) {
             val fields = clazz.fields
             for (field in fields) {
                 val obj = rs.getObject(field.name)

@@ -3,6 +3,8 @@ package data.migration.component
 import config.configs.DatabaseConfig
 import data.SQLHandler
 import data.SqlSelecter
+import extension.warn
+import org.bukkit.entity.Player
 import java.util.*
 
 /**
@@ -71,6 +73,29 @@ class Table(val table_name: String) {
      */
     fun <E> load(clazz: Class<E>, uuid: UUID): E {
         return SqlSelecter.selectOne("select * from $db.$table_name where uuid like '?'", clazz, uuid.toString())
+    }
+
+    /**
+     * 初参加の際に,データを作成します.
+     */
+    fun create(player: Player) {
+        val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
+        val rs = SQLHandler.getResult(command)
+        if (rs == null) {
+            AutoFarming.plugin.warn("[Table] Error. ResultSet is null.")
+            return
+        }
+
+        var count = -1
+        while (rs.next()) {
+            count = rs.getInt("count")
+        }
+
+        if (count == 0) {
+            //初見さん
+            val insert = "insert into $db.$table_name (name, uuid) values('${player.name}', '${player.uniqueId}')"
+            SQLHandler.execute(insert)
+        }
     }
 }
 
