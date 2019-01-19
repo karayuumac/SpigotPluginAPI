@@ -1,7 +1,8 @@
 import command.CommandHandler
 import config.ConfigHandler
 import data.migration.TableMigratory
-import data.SQLHandler
+import data.migration.Create_user_table
+import extension.find
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -9,6 +10,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -27,10 +29,6 @@ class AutoFarming : JavaPlugin() {
 
         //テーブル作成を請け負う.
         TableMigratory.migrate()
-    }
-
-    override fun onDisable() {
-        SQLHandler.disconnect()
     }
 
     companion object {
@@ -57,5 +55,15 @@ object PlayerInteractListener : Listener {
         block.blockData = age
 
         world.dropItem(block.location, ItemStack(Material.WHEAT, 1))
+    }
+}
+
+object PlayerDataListener : Listener {
+    @EventHandler
+    fun onPlayerJoin(e: PlayerJoinEvent) {
+        val player = e.player
+        val data = TableMigratory.load(player)
+
+        player.sendMessage("${data.find(Create_user_table::class.java)?.mining_all})
     }
 }

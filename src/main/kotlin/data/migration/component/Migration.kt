@@ -1,5 +1,6 @@
 package data.migration.component
 
+import org.bukkit.entity.Player
 import java.util.*
 
 /**
@@ -20,5 +21,13 @@ open class Migration(table_name: String) {
      */
     fun <E> load(clazz: Class<E>, uuid: UUID): E {
         return table.load(clazz, uuid)
+    }
+
+    /**
+     * 該当[player]のプレイヤーデータの作成を行います.
+     * 初参加時にのみ作成されます.
+     */
+    fun create(player: Player) {
+        table.create(player)
     }
 }

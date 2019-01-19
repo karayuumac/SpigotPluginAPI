@@ -1,6 +1,7 @@
 package data.migration
 
 import data.migration.component.Migration
+import org.bukkit.entity.Player
 import java.util.*
 
 /**
@@ -32,12 +33,13 @@ object TableMigratory {
     }
 
     /**
-     * [tables]で指定したすべてのテーブルから[uuid]のデータを取得します.
+     * [tables]で指定したすべてのテーブルから[player]のデータを取得します.
      */
-    fun load(uuid: UUID): List<Migration> {
+    fun load(player: Player): List<Migration> {
         val list = mutableListOf<Migration>()
         tables_instances.forEach {
-            val data = it.load(it.javaClass, uuid)
+            it.create(player)
+            val data = it.load(it.javaClass, player.uniqueId)
             list.add(data)
         }
         return list.toList()
