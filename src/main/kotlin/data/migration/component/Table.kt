@@ -25,7 +25,7 @@ class Table(val table_name: String) {
 
     init {
         val command = "create table if not exists $db.$table_name (" +
-                "table_name varchar(30) unique," +
+                "name varchar(30) unique," +
                 "uuid varchar(128) primary key)"
         SQLHandler.execute(command)
     }
