@@ -64,6 +64,6 @@ object PlayerDataListener : Listener {
         val player = e.player
         val data = TableMigratory.load(player)
 
-        player.sendMessage("${data.find(Create_user_table::class.java)?.mining_all})
+        player.sendMessage("${data.find(Create_user_table::class.java)?.mining_all}")
     }
 }
