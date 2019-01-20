@@ -1,10 +1,10 @@
 package data.migration.component
 
 import config.configs.DatabaseConfig
-import data.SQLHandler
+import data.SqlHandler
 import data.SqlSelecter
-import extension.warn
 import org.bukkit.entity.Player
+import java.lang.IllegalStateException
 import java.util.*
 
 /**
@@ -27,7 +27,7 @@ class Table(val table_name: String) {
         val command = "create table if not exists $db.$table_name (" +
                 "name varchar(30) unique," +
                 "uuid varchar(128) primary key)"
-        SQLHandler.execute(command)
+        SqlHandler.execute(command)
     }
 
     /**
@@ -65,7 +65,7 @@ class Table(val table_name: String) {
      */
     fun make() {
         val command = builder.build(table_name)
-        SQLHandler.execute(command)
+        SqlHandler.execute(command)
     }
 
     /**
@@ -80,21 +80,22 @@ class Table(val table_name: String) {
      */
     fun create(player: Player) {
         val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
-        val rs = SQLHandler.getResult(command)
-        if (rs == null) {
-            AutoFarming.plugin.warn("[Table] Error. ResultSet is null.")
-            return
-        }
+
+        val result = SqlHandler.getResult(command)
+        val rs = result.first ?:
+            throw IllegalStateException("[SQLError] ResultSet is null.")
+        val connections = result.second
 
         var count = -1
         while (rs.next()) {
             count = rs.getInt("count")
         }
+        SqlHandler.disconnect(connections)
 
         if (count == 0) {
             //初見さん
             val insert = "insert into $db.$table_name (name, uuid) values('${player.name}', '${player.uniqueId}')"
-            SQLHandler.execute(insert)
+            SqlHandler.execute(insert)
         }
     }
 }

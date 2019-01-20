@@ -10,7 +10,7 @@ import java.sql.*
  *
  * @author karayuu
  */
-object SQLHandler {
+object SqlHandler {
     private val plugin = AutoFarming.plugin
 
     private val url = DatabaseConfig.url
@@ -22,7 +22,9 @@ object SQLHandler {
      */
     fun execute(command: String) {
         AutoFarming.runTaskAsynchronously(Runnable {
-            val (connection, statement) = connect()
+            val connections = connect()
+            val connection = connections.first
+            val statement = connections.second
 
             try {
                 statement.executeUpdate(command)
@@ -30,35 +32,43 @@ object SQLHandler {
                 plugin.warn("[SQLError] Can't execute sql query.")
                 e.printStackTrace()
             } finally {
-                disconnect(connection, statement)
+                disconnect(connections)
             }
         })
     }
 
     /**
-     * [command] で入力されたSQLコマンドを実行し,[ResultSet]を返します(nullable).
+     * [command] で入力されたSQLコマンドを実行し,
+     * [Pair<ResultSet?, Pair<Connection?, Statement?>>]を返します.
+     * close処理をして下さい.
      */
-    fun getResult(command: String): ResultSet? {
+    fun getResult(command: String): Pair<ResultSet?, Pair<Connection?, Statement?>> {
         var rs: ResultSet? = null
+
+        var connection: Connection? = null
+        var statement: Statement? = null
         AutoFarming.runTaskAsynchronously(Runnable {
-            val (connection, statement) = connect()
+            val result = connect()
+            connection = result.first
+            statement = result.second
 
             try {
-                rs = statement.executeQuery(command)
+                rs = statement?.executeQuery(command)
             } catch (e: SQLException) {
                 plugin.warn("[SQLError] Can't execute sql query.")
                 e.printStackTrace()
-            } finally {
-                disconnect(connection, statement)
             }
         })
-        return rs
+        return Pair(rs, Pair(connection, statement))
     }
 
     /**
      * [connection],[statement] を切断します.
      */
-    private fun disconnect(connection: Connection, statement: Statement) {
+    fun disconnect(connections: Pair<Connection?, Statement?>) {
+        val connection = connections.first ?: return
+        val statement = connections.second ?: return
+
         if (!connection.isClosed || !statement.isClosed) {
             connection.close()
             statement.close()
@@ -91,7 +101,7 @@ object SqlSelecter {
      * selectを実行する関数です.
      * [sql] でsql文を(?はプレースホルダー),[clazz] で格納するclassを指定します.
      *
-     * [SQLHandler.getResult]でnullが返された時,[IllegalStateException]を投げます.
+     * [SqlHandler.getResult]でnullが返された時,[IllegalStateException]を投げます.
      */
     fun <E> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
         var obj: E = clazz.newInstance()
@@ -100,10 +110,14 @@ object SqlSelecter {
             for (param in params) {
                 sql.replaceFirst("?", param)
             }
-            val rs: ResultSet = SQLHandler.getResult(sql) ?:
+            val result = SqlHandler.getResult(sql)
+            val rs = result.first  ?:
                 throw IllegalStateException("[SQLError] ResultSet is null.")
+            val connections = result.second
 
             obj = toObject(rs, clazz)
+
+            SqlHandler.disconnect(connections)
         })
         return obj
     }
