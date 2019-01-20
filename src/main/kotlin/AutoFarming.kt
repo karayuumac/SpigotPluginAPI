@@ -22,6 +22,7 @@ class AutoFarming : JavaPlugin() {
         plugin = this
 
         Bukkit.getPluginManager().registerEvents(PlayerInteractListener, this)
+        Bukkit.getPluginManager().registerEvents(PlayerDataListener, this)
 
         CommandHandler.register()
 
