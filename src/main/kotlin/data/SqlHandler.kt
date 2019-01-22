@@ -1,6 +1,8 @@
 package data
 
 import config.configs.DatabaseConfig
+import data.migration.component.Migration
+import extension.info
 import extension.warn
 import java.sql.*
 
@@ -35,23 +37,34 @@ object SqlHandler {
     }
 
     /**
-     * [command] で入力されたSQLコマンドを実行し,[ResultSet?]を返します.
+     * [command] で入力されたSQLコマンドを実行し[column_names]に応じて,
+     * [Map<String(カラム名), Any(そのデータ)>]を返します.
      * 非同期下で実行して下さい.
      */
-    fun getResult(command: String): ResultSet? {
-        var rs: ResultSet? = null
+    fun getResult(command: String, column_names: List<String>): Map<String, Any> {
         val pair = connect()
         val statement = pair.second
 
+        val result = mutableMapOf<String, Any>()
+
         try {
-            rs = statement.executeQuery(command)
+            val rs = statement.executeQuery(command)
+            while (rs.next()) {
+                for (name in column_names) {
+
+                    result[name] = rs.getObject(name)
+                }
+            }
         } catch (e: SQLException) {
             plugin.warn("[SQLError] Can't execute sql query.")
             e.printStackTrace()
         } finally {
             disconnect(pair)
         }
-        return rs
+
+        result.forEach { t, u -> AutoFarming.plugin.info("$t is $u") }
+
+        return result.toMap()
     }
 
     /**
@@ -89,7 +102,7 @@ object SqlHandler {
  *
  * @author karayuu
  */
-object SolSelector {
+object SqlSelector {
     /**
      * selectを実行する関数です.
      * [sql] でsql文を(?はプレースホルダー),[clazz] で格納するclassを指定します.
@@ -97,30 +110,34 @@ object SolSelector {
      * [SqlHandler.getResult]でnullが返された時,[IllegalStateException]を投げます.
      * 非同期下で実行して下さい.
      */
-    fun <E> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
+    fun <E: Migration> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
         val obj: E
         for (param in params) {
             sql.replaceFirst("?", param)
         }
 
-        val rs = SqlHandler.getResult(sql) ?:
-            throw IllegalStateException("[SQLError] ResultSet is null.(SqlSelector#selectOne")
+        AutoFarming.plugin.info("ここはどうかな？")
+        AutoFarming.plugin.info(clazz.fields.joinToString { it.name })
+        clazz.fields.map { it.name }.forEach { AutoFarming.plugin.info(it) }
 
-        obj = toObject(rs, clazz)
+        val result = SqlHandler.getResult(sql, clazz.fields.map { it.name })
+
+        result.forEach { t, u -> AutoFarming.plugin.info("$t is $u") }
+
+        obj = toObject(result, clazz)
         return obj
     }
 
     /**
      * [rs] から [clazz] のオブジェクトを生成します.
      */
-    private fun <E> toObject(rs: ResultSet, clazz: Class<E>): E {
+    private fun <E: Migration> toObject(rm: Map<String, Any>, clazz: Class<E>): E {
         val bean = clazz.newInstance()
-        while (rs.next()) {
-            val fields = clazz.fields
-            for (field in fields) {
-                val obj = rs.getObject(field.name)
-                field.set(bean, obj)
-            }
+        val fields = clazz.fields
+        for (field in fields) {
+            //設計上,Valueが存在しないことはありえないため,強制non-null化.
+            val obj = rm[field.name]!!
+            field.set(bean, obj)
         }
         return bean
     }

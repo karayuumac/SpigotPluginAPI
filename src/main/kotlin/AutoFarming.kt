@@ -1,7 +1,9 @@
 import command.CommandHandler
 import config.ConfigHandler
+import data.migration.Create_user_table
 import data.migration.TableMigratory
 import data.migration.component.Migration
+import extension.info
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -13,6 +15,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
+import kotlin.reflect.full.memberProperties
 
 /**
  * Created by karayuu on 2019/01/02
@@ -69,4 +72,9 @@ object PlayerDataListener : Listener {
             AutoFarming.playerData[player.uniqueId] = data
         })
     }
+}
+
+fun main(args: Array<String>) {
+    println(Create_user_table::class.memberProperties.map { it.name }
+        .filterNot { it == "table" })
 }

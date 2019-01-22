@@ -2,7 +2,7 @@ package data.migration.component
 
 import config.configs.DatabaseConfig
 import data.SqlHandler
-import data.SolSelector
+import data.SqlSelector
 import extension.warn
 import org.bukkit.entity.Player
 import java.sql.SQLException
@@ -74,21 +74,19 @@ class Table(val table_name: String) {
      * 非同期下で実行して下さい.
      */
     fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T {
-        var count = -1
+        var count = -1L
         val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
 
         try {
-            val rs = SqlHandler.getResult(command) ?:
-                throw IllegalStateException("[SQLError] ResultSet is null.(Table#createAndLoad)")
-            while (rs.next()) {
-                count = rs.getInt("count")
-            }
+            val rs = SqlHandler.getResult(command, listOf("count"))
+            //countはlong型で帰ってくることに注意する！
+            count = rs["count"] as Long
         } catch (e: SQLException) {
             AutoFarming.plugin.warn("[SQLError] Can't execute sql query.")
             e.printStackTrace()
         }
 
-        return if (count == 0) {
+        return if (count == 0L) {
             //初見さん
             val insert = "insert into $db.$table_name (name, uuid) values('${player.name}', '${player.uniqueId}')"
             SqlHandler.execute(insert)
@@ -96,7 +94,7 @@ class Table(val table_name: String) {
             clazz.newInstance()
         } else {
             //初見さんじゃないとき
-            SolSelector.selectOne("select * from $db.$table_name where uuid like '?'",
+            SqlSelector.selectOne("select * from $db.$table_name where uuid like '?'",
                 clazz, player.uniqueId.toString())
         }
     }
