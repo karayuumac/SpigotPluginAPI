@@ -7,3 +7,4 @@ commands:
   workbench:
     description: "ワークベンチを開くコマンドです."
     aliases: [craft]
+  test:

@@ -1,6 +1,9 @@
 package data
 
+import AutoFarming.Companion.runTaskAsynchronously
 import config.configs.DatabaseConfig
+import extension.info
+import extension.wait
 import extension.warn
 import java.lang.IllegalStateException
 import java.sql.*
@@ -21,9 +24,8 @@ object SqlHandler {
      * [command] で入力されたSQLコマンドを実行します.
      */
     fun execute(command: String) {
-        AutoFarming.runTaskAsynchronously(Runnable {
+        runTaskAsynchronously(Runnable {
             val connections = connect()
-            val connection = connections.first
             val statement = connections.second
 
             try {
@@ -38,28 +40,35 @@ object SqlHandler {
     }
 
     /**
-     * [command] で入力されたSQLコマンドを実行し,
-     * [Pair<ResultSet?, Pair<Connection?, Statement?>>]を返します.
-     * close処理をして下さい.
+     * [command] で入力されたSQLコマンドを実行し,[list]をもとに,
+     * [Map<String(カラム名), Any(そのデータ)>]を返します.
+     * [list]には[list<String(カラム名)]を入力してください.
      */
-    fun getResult(command: String): Pair<ResultSet?, Pair<Connection?, Statement?>> {
-        var rs: ResultSet? = null
+    fun getResult(command: String, list: List<String>): Map<String, Any> {
+        val result = mutableMapOf<String, Any>()
 
-        var connection: Connection? = null
-        var statement: Statement? = null
-        AutoFarming.runTaskAsynchronously(Runnable {
-            val result = connect()
-            connection = result.first
-            statement = result.second
+        runTaskAsynchronously(Runnable {
+            val connections = connect()
+            val statement = connections.second
 
             try {
-                rs = statement?.executeQuery(command)
+                val rs = statement.executeQuery(command)
+                AutoFarming.runTaskLater(Runnable {
+                    while (rs.next()) {
+                        for (name in list) {
+                            result[name] = rs.getObject(name)
+                        }
+                    }
+                }, 60)
+                plugin.info("sql実行(getResult)")
             } catch (e: SQLException) {
                 plugin.warn("[SQLError] Can't execute sql query.")
                 e.printStackTrace()
+            } finally {
+                disconnect(connections)
             }
         })
-        return Pair(rs, Pair(connection, statement))
+        return result
     }
 
     /**
@@ -78,7 +87,7 @@ object SqlHandler {
     /**
      * connection, statementを生成します.
      */
-    private fun connect(): Pair<Connection, Statement> {
+    fun connect(): Pair<Connection, Statement> {
         val connection = createConnection()
         val statement = connection.createStatement()
         return Pair(connection, statement)
@@ -105,20 +114,24 @@ object SqlSelecter {
      */
     fun <E> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
         var obj: E = clazz.newInstance()
+        var hasFinished = false
 
-        AutoFarming.runTaskAsynchronously(Runnable {
+        runTaskAsynchronously(Runnable {
             for (param in params) {
                 sql.replaceFirst("?", param)
             }
-            val result = SqlHandler.getResult(sql)
-            val rs = result.first  ?:
-                throw IllegalStateException("[SQLError] ResultSet is null.")
-            val connections = result.second
+
+            val connections = SqlHandler.connect()
+            val statement = connections.second
+
+            val rs = statement.executeQuery(sql)
 
             obj = toObject(rs, clazz)
-
-            SqlHandler.disconnect(connections)
+            hasFinished = true
         })
+
+        hasFinished.wait(true)
+
         return obj
     }
 

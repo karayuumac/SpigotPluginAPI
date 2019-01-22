@@ -3,9 +3,12 @@ package data.migration.component
 import config.configs.DatabaseConfig
 import data.SqlHandler
 import data.SqlSelecter
+import extension.info
+import extension.wait
+import extension.waitChnage
+import extension.warn
 import org.bukkit.entity.Player
-import java.lang.IllegalStateException
-import java.util.*
+import java.sql.SQLException
 
 /**
  * Tableを表すクラスです.
@@ -19,7 +22,7 @@ import java.util.*
  * @author karayuu
  */
 class Table(val table_name: String) {
-    private val builder = SQLCommandBuilder()
+    private val builder = SqlCommandBuilder()
 
     private val db = DatabaseConfig.database
 
@@ -69,33 +72,41 @@ class Table(val table_name: String) {
     }
 
     /**
-     * SQLから値をロードします.
+     * データを作成し,初見ならデータを作成します.
+     * そのデータまたは,新規作成されたデータを返します.
      */
-    fun <E> load(clazz: Class<E>, uuid: UUID): E {
-        return SqlSelecter.selectOne("select * from $db.$table_name where uuid like '?'", clazz, uuid.toString())
-    }
-
-    /**
-     * 初参加の際に,データを作成します.
-     */
-    fun create(player: Player) {
-        val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
-
-        val result = SqlHandler.getResult(command)
-        val rs = result.first ?:
-            throw IllegalStateException("[SQLError] ResultSet is null.")
-        val connections = result.second
-
+    fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T {
         var count = -1
-        while (rs.next()) {
-            count = rs.getInt("count")
-        }
-        SqlHandler.disconnect(connections)
+        AutoFarming.runTaskAsynchronously(Runnable {
+            val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
 
-        if (count == 0) {
+            val (connection, statement) = SqlHandler.connect()
+
+            try {
+                val rs = statement.executeQuery(command)
+                while (rs.next()) {
+                    count = rs.getInt("count")
+                }
+            } catch (e: SQLException) {
+                AutoFarming.plugin.warn("[SQLError] Can't execute sql query.")
+                e.printStackTrace()
+            }
+
+            SqlHandler.disconnect(Pair(connection, statement))
+        })
+
+        count.waitChnage(-1)
+
+        return if (count == 0) {
             //初見さん
             val insert = "insert into $db.$table_name (name, uuid) values('${player.name}', '${player.uniqueId}')"
             SqlHandler.execute(insert)
+
+            clazz.newInstance()
+        } else {
+            //初見さんじゃないとき
+            SqlSelecter.selectOne("select * from $db.$table_name where uuid like '?'",
+                clazz, player.uniqueId.toString())
         }
     }
 }
@@ -105,14 +116,14 @@ class Table(val table_name: String) {
  *
  * @author karayuu
  */
-class SQLCommandBuilder {
+class SqlCommandBuilder {
     private var command: String = ""
-    fun add(column_name: String, type: String, default: String): SQLCommandBuilder {
+    fun add(column_name: String, type: String, default: String): SqlCommandBuilder {
         command += ",add column if not exists $column_name $type default $default"
         return this
     }
 
-    fun add(command: String): SQLCommandBuilder {
+    fun add(command: String): SqlCommandBuilder {
         this.command += ",$command"
         return this
     }

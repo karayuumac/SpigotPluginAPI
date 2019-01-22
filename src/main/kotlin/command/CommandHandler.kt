@@ -1,5 +1,6 @@
 package command
 
+import command.data.DataTestCommand
 import command.workbench.WorkBenchCommand
 import org.bukkit.Bukkit
 import org.bukkit.command.TabExecutor
@@ -10,6 +11,7 @@ import org.bukkit.command.TabExecutor
 object CommandHandler {
     fun register() {
         registerCommand(WorkBenchCommand, "workbench")
+        registerCommand(DataTestCommand, "test")
     }
 
     private fun registerCommand(executor: TabExecutor, name: String) {

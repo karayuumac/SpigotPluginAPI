@@ -1,7 +1,9 @@
 import command.CommandHandler
 import config.ConfigHandler
+import data.SqlHandler
 import data.migration.TableMigratory
 import data.migration.Create_user_table
+import data.migration.component.Migration
 import extension.find
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -13,6 +15,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.*
 
 /**
  * Created by karayuu on 2019/01/02
@@ -34,9 +37,14 @@ class AutoFarming : JavaPlugin() {
 
     companion object {
         lateinit var plugin: AutoFarming
+        val playerData = mutableMapOf<UUID, List<Migration>>()
 
         fun runTaskAsynchronously(runnable: Runnable) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable)
+        }
+
+        fun runTaskLater(runnable: Runnable, tick: Long) {
+            Bukkit.getScheduler().runTaskLater(plugin, runnable, tick)
         }
     }
 }
@@ -64,6 +72,7 @@ object PlayerDataListener : Listener {
     fun onPlayerJoin(e: PlayerJoinEvent) {
         val player = e.player
         val data = TableMigratory.load(player)
+        AutoFarming.playerData[player.uniqueId] = data
 
         player.sendMessage("${data.find(Create_user_table::class.java)?.mining_all}")
     }

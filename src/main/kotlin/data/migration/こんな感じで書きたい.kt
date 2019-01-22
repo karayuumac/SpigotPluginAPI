@@ -1,6 +1,7 @@
 package data.migration
 
 import data.migration.component.Migration
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.*
 
@@ -37,11 +38,14 @@ object TableMigratory {
      */
     fun load(player: Player): List<Migration> {
         val list = mutableListOf<Migration>()
-        tables_instances.forEach {
-            it.create(player)
-            val data = it.load(it.javaClass, player.uniqueId)
-            list.add(data)
-        }
+        AutoFarming.runTaskAsynchronously(Runnable {
+            tables_instances.forEach {
+                val data = it.createAndLoad(player, it.javaClass)
+                if (data != null) {
+                    list.add(data)
+                }
+            }
+        })
         return list.toList()
     }
 }
