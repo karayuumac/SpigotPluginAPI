@@ -1,10 +1,7 @@
 import command.CommandHandler
 import config.ConfigHandler
-import data.SqlHandler
 import data.migration.TableMigratory
-import data.migration.Create_user_table
 import data.migration.component.Migration
-import extension.find
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -42,10 +39,6 @@ class AutoFarming : JavaPlugin() {
         fun runTaskAsynchronously(runnable: Runnable) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable)
         }
-
-        fun runTaskLater(runnable: Runnable, tick: Long) {
-            Bukkit.getScheduler().runTaskLater(plugin, runnable, tick)
-        }
     }
 }
 
@@ -71,9 +64,9 @@ object PlayerDataListener : Listener {
     @EventHandler
     fun onPlayerJoin(e: PlayerJoinEvent) {
         val player = e.player
-        val data = TableMigratory.load(player)
-        AutoFarming.playerData[player.uniqueId] = data
-
-        player.sendMessage("${data.find(Create_user_table::class.java)?.mining_all}")
+        AutoFarming.runTaskAsynchronously(Runnable {
+            val data = TableMigratory.load(player)
+            AutoFarming.playerData[player.uniqueId] = data
+        })
     }
 }

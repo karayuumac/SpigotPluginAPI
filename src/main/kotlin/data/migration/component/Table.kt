@@ -2,10 +2,7 @@ package data.migration.component
 
 import config.configs.DatabaseConfig
 import data.SqlHandler
-import data.SqlSelecter
-import extension.info
-import extension.wait
-import extension.waitChnage
+import data.SolSelector
 import extension.warn
 import org.bukkit.entity.Player
 import java.sql.SQLException
@@ -74,28 +71,22 @@ class Table(val table_name: String) {
     /**
      * データを作成し,初見ならデータを作成します.
      * そのデータまたは,新規作成されたデータを返します.
+     * 非同期下で実行して下さい.
      */
     fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T {
         var count = -1
-        AutoFarming.runTaskAsynchronously(Runnable {
-            val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
+        val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
 
-            val (connection, statement) = SqlHandler.connect()
-
-            try {
-                val rs = statement.executeQuery(command)
-                while (rs.next()) {
-                    count = rs.getInt("count")
-                }
-            } catch (e: SQLException) {
-                AutoFarming.plugin.warn("[SQLError] Can't execute sql query.")
-                e.printStackTrace()
+        try {
+            val rs = SqlHandler.getResult(command) ?:
+                throw IllegalStateException("[SQLError] ResultSet is null.(Table#createAndLoad)")
+            while (rs.next()) {
+                count = rs.getInt("count")
             }
-
-            SqlHandler.disconnect(Pair(connection, statement))
-        })
-
-        count.waitChnage(-1)
+        } catch (e: SQLException) {
+            AutoFarming.plugin.warn("[SQLError] Can't execute sql query.")
+            e.printStackTrace()
+        }
 
         return if (count == 0) {
             //初見さん
@@ -105,7 +96,7 @@ class Table(val table_name: String) {
             clazz.newInstance()
         } else {
             //初見さんじゃないとき
-            SqlSelecter.selectOne("select * from $db.$table_name where uuid like '?'",
+            SolSelector.selectOne("select * from $db.$table_name where uuid like '?'",
                 clazz, player.uniqueId.toString())
         }
     }

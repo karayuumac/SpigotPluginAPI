@@ -1,7 +1,6 @@
 package data.migration.component
 
 import org.bukkit.entity.Player
-import java.util.*
 
 /**
  * @author karayuu
@@ -20,6 +19,7 @@ open class Migration(table_name: String) {
      * 該当[player]のプレイヤーデータの作成を行います.
      * 初参加時にのみ作成されます.
      * 新規参加の有無を問わず,データを返します.
+     * 非同期下で実行して下さい.
      */
     fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T? {
         return table.createAndLoad(player, clazz)

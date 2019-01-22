@@ -1,9 +1,7 @@
 package data.migration
 
 import data.migration.component.Migration
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import java.util.*
 
 /**
  * @author karayuu
@@ -35,17 +33,16 @@ object TableMigratory {
 
     /**
      * [tables]で指定したすべてのテーブルから[player]のデータを取得します.
+     * 非同期下で実行して下さい.
      */
     fun load(player: Player): List<Migration> {
         val list = mutableListOf<Migration>()
-        AutoFarming.runTaskAsynchronously(Runnable {
-            tables_instances.forEach {
-                val data = it.createAndLoad(player, it.javaClass)
-                if (data != null) {
-                    list.add(data)
-                }
+        tables_instances.forEach {
+            val data = it.createAndLoad(player, it.javaClass)
+            if (data != null) {
+                list.add(data)
             }
-        })
+        }
         return list.toList()
     }
 }
