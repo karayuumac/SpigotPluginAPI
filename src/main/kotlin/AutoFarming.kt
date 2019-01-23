@@ -85,15 +85,3 @@ object PlayerDataListener : Listener {
         })
     }
 }
-
-fun main(args: Array<String>) {
-    val test = Test()
-    Test::class.memberProperties.forEach {
-        it.isAccessible = true
-        println((it.returnType.classifier as KClass<*>).functions.first { it.name == "toString" }.call(it.get(test)))
-    }
-}
-
-class Test {
-    val a: Int = 1
-}

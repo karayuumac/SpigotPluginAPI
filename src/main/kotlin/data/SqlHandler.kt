@@ -10,6 +10,7 @@ import java.sql.*
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.declaredMemberExtensionProperties
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
@@ -180,7 +181,7 @@ object SqlSelector {
             }
 
             val clazz = field.returnType.classifier as KClass<*>
-            val value = clazz.functions.first { it.name == "toString" }.call(migration)
+            val value = clazz.functions.first { it.name == "toString" }.call(field.javaField!!.get(migration))
 
             //valueはtoStringを呼んでいるので,Stringであることは明らか.
             builder.update(field.name, value as String)

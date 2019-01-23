@@ -123,7 +123,7 @@ class SqlCommandBuilder {
     }
 
     fun update(column_name: String, value: String): SqlCommandBuilder {
-        command += ",$column_name = $value"
+        command += ",$column_name = '$value'"
         return this
     }
 

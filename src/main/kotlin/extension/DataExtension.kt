@@ -11,6 +11,7 @@ import java.util.*
 /**
  * [clazz]で指定したクラスのMigrationを取得します.
  */
+@Suppress("UNCHECKED_CAST")
 fun <T: Migration> List<Migration>.find(clazz: Class<T>): T? {
     val list = this
     for (migration in list) {
@@ -26,6 +27,10 @@ fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<
     return list.find(clazz)
 }
 
+/**
+ * [player]のデータをSQLに保存します.
+ * 非同期下で実行してください.
+ */
 fun Map<UUID, List<Migration>>.save(player: Player) {
     val list = this[player.uniqueId]
     list?.forEach { it.update(player) }
