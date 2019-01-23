@@ -75,6 +75,5 @@ object PlayerDataListener : Listener {
 }
 
 fun main(args: Array<String>) {
-    println(Create_user_table::class.memberProperties.map { it.name }
-        .filterNot { it == "table" })
+    println(Create_user_table::class.java.fields.map { it.name })
 }

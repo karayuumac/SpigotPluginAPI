@@ -1,6 +1,7 @@
 package data.migration.component
 
 import org.bukkit.entity.Player
+import kotlin.reflect.KClass
 
 /**
  * @author karayuu
@@ -21,7 +22,7 @@ open class Migration(table_name: String) {
      * 新規参加の有無を問わず,データを返します.
      * 非同期下で実行して下さい.
      */
-    fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T {
+    fun <T: Migration> createAndLoad(player: Player, clazz: KClass<out T>): T {
         return table.createAndLoad(player, clazz)
     }
 }

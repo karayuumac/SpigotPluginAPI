@@ -5,6 +5,10 @@ import data.migration.component.Migration
 import extension.info
 import extension.warn
 import java.sql.*
+import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaField
 
 /**
  * SQLの初期準備等を行うオブジェクトです.
@@ -110,17 +114,15 @@ object SqlSelector {
      * [SqlHandler.getResult]でnullが返された時,[IllegalStateException]を投げます.
      * 非同期下で実行して下さい.
      */
-    fun <E: Migration> selectOne(sql: String, clazz: Class<E>, vararg params: String): E {
-        val obj: E
+    fun <T: Migration> selectOne(sql: String, clazz: KClass<out T>, vararg params: String): T {
+        val obj: T
         for (param in params) {
             sql.replaceFirst("?", param)
         }
 
-        AutoFarming.plugin.info("ここはどうかな？")
-        AutoFarming.plugin.info(clazz.fields.joinToString { it.name })
-        clazz.fields.map { it.name }.forEach { AutoFarming.plugin.info(it) }
-
-        val result = SqlHandler.getResult(sql, clazz.fields.map { it.name })
+        //Migrationを継承しているため,tableがプロパティに含まれてしまう.
+        val result = SqlHandler.getResult(sql, clazz.memberProperties.map { it.name }
+            .filterNot { it == "table" })
 
         result.forEach { t, u -> AutoFarming.plugin.info("$t is $u") }
 
@@ -131,12 +133,18 @@ object SqlSelector {
     /**
      * [rs] から [clazz] のオブジェクトを生成します.
      */
-    private fun <E: Migration> toObject(rm: Map<String, Any>, clazz: Class<E>): E {
-        val bean = clazz.newInstance()
-        val fields = clazz.fields
+    private fun <T: Migration> toObject(rm: Map<String, Any>, clazz: KClass<out T>): T {
+        val bean = clazz.createInstance()
+        val fields = clazz.memberProperties.map { it.javaField }
         for (field in fields) {
             //設計上,Valueが存在しないことはありえないため,強制non-null化.
+            val name = field!!.name
+            if (name == "table") {
+                //Migrationを継承しているため,tableがプロパティに含まれてしまう.
+                continue
+            }
             val obj = rm[field.name]!!
+
             field.set(bean, obj)
         }
         return bean

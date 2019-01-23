@@ -40,7 +40,7 @@ object TableMigratory {
     fun load(player: Player): List<Migration> {
         val list = mutableListOf<Migration>()
         tables_instances.forEach {
-            it.createAndLoad(player, it::class.java).also { migration ->  list.add(migration) }
+            it.createAndLoad(player, it::class).also { migration ->  list.add(migration) }
         }
         return list.toList()
     }

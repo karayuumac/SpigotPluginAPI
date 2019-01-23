@@ -6,6 +6,8 @@ import data.SqlSelector
 import extension.warn
 import org.bukkit.entity.Player
 import java.sql.SQLException
+import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 
 /**
  * Tableを表すクラスです.
@@ -73,7 +75,7 @@ class Table(val table_name: String) {
      * そのデータまたは,新規作成されたデータを返します.
      * 非同期下で実行して下さい.
      */
-    fun <T: Migration> createAndLoad(player: Player, clazz: Class<T>): T {
+    fun <T: Migration> createAndLoad(player: Player, clazz: KClass<out T>): T {
         var count = -1L
         val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
 
@@ -91,7 +93,7 @@ class Table(val table_name: String) {
             val insert = "insert into $db.$table_name (name, uuid) values('${player.name}', '${player.uniqueId}')"
             SqlHandler.execute(insert)
 
-            clazz.newInstance()
+            clazz.createInstance()
         } else {
             //初見さんじゃないとき
             SqlSelector.selectOne("select * from $db.$table_name where uuid like '?'",
