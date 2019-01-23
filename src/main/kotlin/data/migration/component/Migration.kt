@@ -23,6 +23,6 @@ open class Migration(table_name: String) {
      * 非同期下で実行して下さい.
      */
     fun <T: Migration> createAndLoad(player: Player, clazz: KClass<out T>): T {
-        return table.createAndLoad(player, clazz)
+        return table.createOrLoad(player, clazz)
     }
 }

@@ -2,9 +2,11 @@ package data
 
 import config.configs.DatabaseConfig
 import data.migration.component.Migration
+import data.migration.component.SqlCommandBuilder
 import extension.info
 import extension.warn
 import java.sql.*
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.memberProperties
@@ -157,5 +159,22 @@ object SqlSelector {
             field.set(bean, obj)
         }
         return bean
+    }
+
+    /**
+     * [uuid]のデータを[migration]でupdateします.
+     * 非同期下で実行して下さい.
+     */
+    fun update(migration: Migration, uuid: UUID) {
+        val builder = SqlCommandBuilder()
+        val fields = migration::class.memberProperties
+
+        for (field in fields) {
+            if (field.name == "table") {
+                //Migrationの継承により,tableがプロパティに含まれてしまう.
+                continue
+            }
+            //builder.update(field.name, field.tyfield.get(migration))
+        }
     }
 }

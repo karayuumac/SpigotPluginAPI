@@ -66,7 +66,7 @@ class Table(val table_name: String) {
      * テーブルを作成します.
      */
     fun make() {
-        val command = builder.build(table_name)
+        val command = builder.buildAsAlter(table_name)
         SqlHandler.execute(command)
     }
 
@@ -75,7 +75,7 @@ class Table(val table_name: String) {
      * そのデータまたは,新規作成されたデータを返します.
      * 非同期下で実行して下さい.
      */
-    fun <T: Migration> createAndLoad(player: Player, clazz: KClass<out T>): T {
+    fun <T: Migration> createOrLoad(player: Player, clazz: KClass<out T>): T {
         var count = -1L
         val command = "select count(*) as count from $db.$table_name where uuid = '${player.uniqueId}'"
 
@@ -114,12 +114,21 @@ class SqlCommandBuilder {
         return this
     }
 
+    fun update(column_name: String, value: String): SqlCommandBuilder {
+        command += ",$column_name = $value"
+        return this
+    }
+
     fun add(command: String): SqlCommandBuilder {
         this.command += ",$command"
         return this
     }
 
-    fun build(table_name: String): String {
+    fun buildAsAlter(table_name: String): String {
         return "alter table ${DatabaseConfig.database}.$table_name " + command.removePrefix(",")
+    }
+
+    fun buildAsUpdate(table_name: String): String {
+        return "update ${DatabaseConfig.database}.$table_name set " + command.removePrefix(",")
     }
 }

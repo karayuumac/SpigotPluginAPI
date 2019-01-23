@@ -15,7 +15,9 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
-import kotlin.reflect.full.memberProperties
+import kotlin.reflect.KClass
+import kotlin.reflect.full.*
+import kotlin.reflect.jvm.isAccessible
 
 /**
  * Created by karayuu on 2019/01/02
@@ -75,5 +77,13 @@ object PlayerDataListener : Listener {
 }
 
 fun main(args: Array<String>) {
-    println(Create_user_table::class.memberProperties.map { it.name })
+    val test = Test()
+    Test::class.memberProperties.forEach {
+        it.isAccessible = true
+        println((it.returnType.classifier as KClass<*>).functions.first { it.name == "toString" }.call(it.get(test)))
+    }
+}
+
+class Test {
+    val a: Int = 1
 }
