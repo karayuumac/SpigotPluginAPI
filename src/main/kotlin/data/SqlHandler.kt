@@ -50,13 +50,14 @@ object SqlHandler {
         val statement = pair.second
 
         val result = mutableMapOf<String, Any>()
+        AutoFarming.plugin.info("column_names is $column_names")
 
         try {
             val rs = statement.executeQuery(command)
             while (rs.next()) {
                 for (name in column_names) {
-
-                    result[name] = rs.getObject(name)
+                    val temp = rs.getObject(name)
+                    result[name] = temp
                 }
             }
         } catch (e: SQLException) {
@@ -116,35 +117,43 @@ object SqlSelector {
      */
     fun <T: Migration> selectOne(sql: String, clazz: KClass<out T>, vararg params: String): T {
         val obj: T
+        var command = sql
         for (param in params) {
-            sql.replaceFirst("?", param)
+            //replaceFirstは新しいStringを返すだけで,副作用を生まないことに注意する!
+            command = sql.replaceFirst("?", param)
         }
 
-        //Migrationを継承しているため,tableがプロパティに含まれてしまう.
-        val result = SqlHandler.getResult(sql, clazz.memberProperties.map { it.name }
+        AutoFarming.plugin.info("sql is $command")
+
+        //Migrationの継承により,tableがプロパティに含まれてしまう.
+        val result = SqlHandler.getResult(command, clazz.memberProperties.map { it.name }
             .filterNot { it == "table" })
 
-        result.forEach { t, u -> AutoFarming.plugin.info("$t is $u") }
+        AutoFarming.plugin.info(clazz.memberProperties.map { it.name }
+            .filterNot { it == "table" }.toString())
 
         obj = toObject(result, clazz)
         return obj
     }
 
     /**
-     * [rs] から [clazz] のオブジェクトを生成します.
+     * [rm] から [clazz] のオブジェクトを生成します.
      */
     private fun <T: Migration> toObject(rm: Map<String, Any>, clazz: KClass<out T>): T {
         val bean = clazz.createInstance()
         val fields = clazz.memberProperties.map { it.javaField }
         for (field in fields) {
             //設計上,Valueが存在しないことはありえないため,強制non-null化.
-            val name = field!!.name
+            field!!.isAccessible = true
+            val name = field.name
             if (name == "table") {
-                //Migrationを継承しているため,tableがプロパティに含まれてしまう.
+                //Migrationの継承により,tableがプロパティに含まれてしまう.
                 continue
             }
+            //設計上,Valueが存在しないことはありえないため,強制non-null化.
             val obj = rm[field.name]!!
 
+            AutoFarming.plugin.info("Field $name に $obj をセット")
             field.set(bean, obj)
         }
         return bean

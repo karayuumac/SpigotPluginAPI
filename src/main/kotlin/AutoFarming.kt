@@ -75,5 +75,5 @@ object PlayerDataListener : Listener {
 }
 
 fun main(args: Array<String>) {
-    println(Create_user_table::class.java.fields.map { it.name })
+    println(Create_user_table::class.memberProperties.map { it.name })
 }
