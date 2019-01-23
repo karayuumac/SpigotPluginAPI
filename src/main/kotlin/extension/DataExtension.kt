@@ -25,3 +25,8 @@ fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<
     val list = this[player.uniqueId] ?: throw CannotFindPlayerException()
     return list.find(clazz)
 }
+
+fun Map<UUID, List<Migration>>.save(player: Player) {
+    val list = this[player.uniqueId]
+    list?.forEach { it.update(player) }
+}

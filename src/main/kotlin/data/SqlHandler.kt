@@ -5,10 +5,12 @@ import data.migration.component.Migration
 import data.migration.component.SqlCommandBuilder
 import extension.info
 import extension.warn
+import org.bukkit.entity.Player
 import java.sql.*
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.functions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 
@@ -162,11 +164,13 @@ object SqlSelector {
     }
 
     /**
-     * [uuid]のデータを[migration]でupdateします.
+     * [player]のデータを[migration]でupdateします.
      * 非同期下で実行して下さい.
      */
-    fun update(migration: Migration, uuid: UUID) {
+    fun update(migration: Migration, player: Player, table_name: String) {
         val builder = SqlCommandBuilder()
+        builder.update("name", player.name)
+
         val fields = migration::class.memberProperties
 
         for (field in fields) {
@@ -174,7 +178,13 @@ object SqlSelector {
                 //Migrationの継承により,tableがプロパティに含まれてしまう.
                 continue
             }
-            //builder.update(field.name, field.tyfield.get(migration))
+
+            val clazz = field.returnType.classifier as KClass<*>
+            val value = clazz.functions.first { it.name == "toString" }.call(migration)
+
+            //valueはtoStringを呼んでいるので,Stringであることは明らか.
+            builder.update(field.name, value as String)
         }
+        SqlHandler.execute(builder.buildAsUpdate(table_name))
     }
 }

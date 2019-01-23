@@ -44,4 +44,14 @@ object TableMigratory {
         }
         return list.toList()
     }
+
+    /**
+     * [tables]で指定した全てのテーブルに置いてSQLへの保存処理を行います.
+     * 非同期下で実行して下さい.
+     */
+    fun save(player: Player) {
+        tables_instances.forEach {
+            it.update(player)
+        }
+    }
 }

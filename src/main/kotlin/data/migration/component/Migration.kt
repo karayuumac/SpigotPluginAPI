@@ -25,4 +25,12 @@ open class Migration(table_name: String) {
     fun <T: Migration> createAndLoad(player: Player, clazz: KClass<out T>): T {
         return table.createOrLoad(player, clazz)
     }
+
+    /**
+     * [player]のデータをアップデートします.
+     * 非同期下で実行して下さい.
+     */
+    fun update(player: Player) {
+        table.update(this, player)
+    }
 }

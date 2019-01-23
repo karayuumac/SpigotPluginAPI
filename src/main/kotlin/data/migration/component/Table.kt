@@ -100,6 +100,14 @@ class Table(val table_name: String) {
                 clazz, player.uniqueId.toString())
         }
     }
+
+    /**
+     * [player]のデータを[migration]でアップデートします.
+     * 非同期下で実行して下さい.
+     */
+    fun update(migration: Migration, player: Player) {
+        SqlSelector.update(migration, player, table_name)
+    }
 }
 
 /**

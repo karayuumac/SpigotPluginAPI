@@ -61,6 +61,6 @@ task copyJar(type: Copy){
 
 task copyJarMac(type: Copy) {
     from jar
-    into "/Users/InfinityCircles/plugins/"
+    into "/Users/1.13.2test_server/plugins"
 }
 

@@ -4,6 +4,7 @@ import data.migration.Create_user_table
 import data.migration.TableMigratory
 import data.migration.component.Migration
 import extension.info
+import extension.save
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
@@ -12,6 +13,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -72,6 +74,14 @@ object PlayerDataListener : Listener {
         AutoFarming.runTaskAsynchronously(Runnable {
             val data = TableMigratory.load(player)
             AutoFarming.playerData[player.uniqueId] = data
+        })
+    }
+
+    @EventHandler
+    fun onPlayerLeft(e: PlayerQuitEvent) {
+        val player = e.player
+        AutoFarming.runTaskAsynchronously(Runnable {
+            AutoFarming.playerData.save(player)
         })
     }
 }
