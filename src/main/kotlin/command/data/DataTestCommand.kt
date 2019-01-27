@@ -1,6 +1,6 @@
 package command.data
 
-import data.migration.Create_user_table
+import data.migration.migrations.Create_user_table
 import extension.find
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender

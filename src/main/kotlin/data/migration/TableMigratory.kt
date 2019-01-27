@@ -1,15 +1,8 @@
 package data.migration
 
 import data.migration.component.Migration
+import data.migration.migrations.Create_user_table
 import org.bukkit.entity.Player
-
-/**
- * @author karayuu
- */
-
-class Create_user_table : Migration("user_table_mining") {
-    var mining_all = table.int("mining_all")
-}
 
 object TableMigratory {
     /** Migrationを行うクラスを指定します. */

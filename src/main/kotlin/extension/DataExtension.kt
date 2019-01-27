@@ -22,16 +22,21 @@ fun <T: Migration> List<Migration>.find(clazz: Class<T>): T? {
     return null
 }
 
-fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<T>): T? {
+fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<T>): T {
     val list = this[player.uniqueId] ?: throw CannotFindPlayerException()
-    return list.find(clazz)
+    return list.find(clazz)!!
 }
 
 /**
- * [player]のデータをSQLに保存します.
+ * [player]のデータをSQLに保存し,[playerdata]Mapから削除します.
  * 非同期下で実行してください.
  */
 fun Map<UUID, List<Migration>>.save(player: Player) {
     val list = this[player.uniqueId]
     list?.forEach { it.update(player) }
+    AutoFarming.playerData.remove(player.uniqueId)
+}
+
+fun <T: Migration> Player.find(clazz: Class<T>): T {
+    return AutoFarming.playerData.find(this, clazz)
 }

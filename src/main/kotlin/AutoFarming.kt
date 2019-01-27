@@ -1,9 +1,9 @@
 import command.CommandHandler
 import config.ConfigHandler
-import data.migration.Create_user_table
 import data.migration.TableMigratory
 import data.migration.component.Migration
-import extension.info
+import data.migration.migrations.Create_user_table
+import extension.find
 import extension.save
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -11,15 +11,13 @@ import org.bukkit.block.data.Ageable
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
-import kotlin.reflect.KClass
-import kotlin.reflect.full.*
-import kotlin.reflect.jvm.isAccessible
 
 /**
  * Created by karayuu on 2019/01/02
@@ -83,5 +81,12 @@ object PlayerDataListener : Listener {
         AutoFarming.runTaskAsynchronously(Runnable {
             AutoFarming.playerData.save(player)
         })
+    }
+
+    @EventHandler
+    fun onPlayerBlockBreak(e: BlockBreakEvent) {
+        val player = e.player
+        val clazz = player.find(Create_user_table::class.java)
+        clazz.mining_all += 1
     }
 }
