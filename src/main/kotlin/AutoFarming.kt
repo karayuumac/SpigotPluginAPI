@@ -8,6 +8,7 @@ import extension.save
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.data.Ageable
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
@@ -17,6 +18,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import recipe.RecipeHandler
 import java.util.*
 
 /**
@@ -35,6 +37,16 @@ class AutoFarming : JavaPlugin() {
 
         //テーブル作成を請け負う.
         TableMigratory.migrate()
+
+        RecipeHandler.register()
+    }
+
+    override fun onDisable() {
+        //オンラインプレイヤーのデータ保存処理.
+        val playerList: List<Player> = Bukkit.getServer().onlinePlayers.toMutableList()
+        runTaskAsynchronously(Runnable {
+            playerList.forEach { it.save() }
+        })
     }
 
     companion object {

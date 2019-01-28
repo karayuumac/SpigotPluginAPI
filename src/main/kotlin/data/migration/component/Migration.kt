@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
  * @author karayuu
  */
 open class Migration(table_name: String) {
-    open protected val table = Table(table_name)
+    protected open val table = Table(table_name)
 
     /**
      * tableの作成を行います.

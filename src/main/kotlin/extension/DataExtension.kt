@@ -1,6 +1,6 @@
 package extension
 
-import data.CannotFindPlayerException
+import data.CannotFindPlayerDataException
 import data.migration.component.Migration
 import org.bukkit.entity.Player
 import java.util.*
@@ -23,7 +23,7 @@ fun <T: Migration> List<Migration>.find(clazz: Class<T>): T? {
 }
 
 fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<T>): T {
-    val list = this[player.uniqueId] ?: throw CannotFindPlayerException()
+    val list = this[player.uniqueId] ?: throw CannotFindPlayerDataException(player)
     return list.find(clazz)!!
 }
 
@@ -32,8 +32,18 @@ fun <T: Migration> Map<UUID, List<Migration>>.find(player: Player, clazz: Class<
  * 非同期下で実行してください.
  */
 fun Map<UUID, List<Migration>>.save(player: Player) {
-    val list = this[player.uniqueId]
-    list?.forEach { it.update(player) }
+    val list = this[player.uniqueId] ?: throw CannotFindPlayerDataException(player)
+    list.forEach { it.update(player) }
+    AutoFarming.playerData.remove(player.uniqueId)
+}
+
+/**
+ * [player]のデータをSQLに保存し,[playerdata]Mapから削除します.
+ * 非同期下で実行してください.
+ */
+fun Player.save() {
+    val data = AutoFarming.playerData[this.uniqueId] ?: throw CannotFindPlayerDataException(player)
+    data.forEach { it.update(this) }
     AutoFarming.playerData.remove(player.uniqueId)
 }
 
